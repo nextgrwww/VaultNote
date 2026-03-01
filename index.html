@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>VaultNote - Secure Notes</title>
+    <!-- Shield Favicon -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%232563eb'><path d='M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z'/></svg>">
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -20,7 +22,7 @@
         }
     </script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono&display=swap');
         
         body {
             font-family: 'Inter', sans-serif;
@@ -132,24 +134,72 @@
         </div>
     </div>
 
+    <!-- Help Modal -->
+    <div id="help-modal" class="modal-overlay hidden">
+        <div class="bg-white dark:bg-darkSidebar p-8 rounded-2xl shadow-2xl w-96 border border-gray-200 dark:border-darkBorder relative">
+            <button onclick="closeModal('help-modal')" class="absolute top-4 right-4 text-gray-400 hover:text-gray-800 dark:hover:text-white transition">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+            </button>
+            <h2 class="text-xl font-semibold mb-6 dark:text-white flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                Help & Shortcuts
+            </h2>
+            <ul class="space-y-4 text-sm text-gray-600 dark:text-gray-300">
+                <li class="flex justify-between items-center"><span>Search or Create Note</span> <kbd class="bg-gray-100 dark:bg-darkBg border border-gray-200 dark:border-darkBorder p-1.5 rounded font-mono text-xs">Ctrl + L</kbd></li>
+                <li class="flex justify-between items-center"><span>Create Note from Search</span> <kbd class="bg-gray-100 dark:bg-darkBg border border-gray-200 dark:border-darkBorder p-1.5 rounded font-mono text-xs">Enter</kbd></li>
+                <li class="flex justify-between items-center"><span>Open URL in Note</span> <kbd class="bg-gray-100 dark:bg-darkBg border border-gray-200 dark:border-darkBorder p-1.5 rounded font-mono text-xs">Ctrl + Click</kbd></li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- About Modal -->
+    <div id="about-modal" class="modal-overlay hidden">
+        <div class="bg-white dark:bg-darkSidebar p-8 rounded-2xl shadow-2xl w-96 border border-gray-200 dark:border-darkBorder relative text-center">
+            <button onclick="closeModal('about-modal')" class="absolute top-4 right-4 text-gray-400 hover:text-gray-800 dark:hover:text-white transition">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+            </button>
+            <div class="flex justify-center mb-4">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-20 w-20 text-blue-600" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z"/>
+                </svg>
+            </div>
+            <h2 class="text-3xl font-bold dark:text-white tracking-tight mb-1">VaultNote</h2>
+            <p class="text-xs text-blue-500 font-bold mb-6 uppercase tracking-widest">End-to-End Encrypted</p>
+            
+            <div class="border-t border-gray-200 dark:border-darkBorder pt-6">
+                <p class="text-sm text-gray-600 dark:text-gray-300 mb-2">Created by <span class="font-semibold text-gray-900 dark:text-white">Tekken (Hammad Ahmed)</span></p>
+                <p class="text-xs text-gray-400">Copyright &copy; <span id="year"></span>. All rights reserved.</p>
+            </div>
+        </div>
+    </div>
+
     <div class="nv-container">
         <!-- Sidebar -->
         <div class="sidebar">
             <div class="search-area p-[15px] flex items-center gap-2">
-                <input type="text" id="search-input" oninput="handleSearch()" class="flex-1 p-2 bg-white dark:bg-darkBg border border-gray-300 dark:border-darkBorder rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 outline-none text-sm" placeholder="Search or Create...">
-                <button onclick="toggleDarkMode()" class="p-2 rounded-md hover:bg-gray-200 dark:hover:bg-darkBorder transition-colors" title="Toggle Dark Mode">
-                    <svg id="sun-icon" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 hidden dark:block text-yellow-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
-                    </svg>
-                    <svg id="moon-icon" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 block dark:hidden text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" />
-                    </svg>
-                </button>
+                <input type="text" id="search-input" oninput="handleSearch()" class="flex-1 p-2 bg-white dark:bg-darkBg border border-gray-300 dark:border-darkBorder rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 outline-none text-sm" placeholder="Search title or content...">
+                
+                <div class="flex gap-1">
+                    <button onclick="openModal('help-modal')" class="p-2 rounded-md hover:bg-gray-200 dark:hover:bg-darkBorder transition-colors text-gray-500 dark:text-gray-400" title="Help">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                    </button>
+                    <button onclick="openModal('about-modal')" class="p-2 rounded-md hover:bg-gray-200 dark:hover:bg-darkBorder transition-colors text-gray-500 dark:text-gray-400" title="About">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                    </button>
+                    <button onclick="toggleDarkMode()" class="p-2 rounded-md hover:bg-gray-200 dark:hover:bg-darkBorder transition-colors" title="Toggle Dark Mode">
+                        <svg id="sun-icon" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 hidden dark:block text-yellow-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+                        </svg>
+                        <svg id="moon-icon" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 block dark:hidden text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" />
+                        </svg>
+                    </button>
+                </div>
             </div>
             <div id="notes-list" class="notes-list"></div>
             <div class="p-3 border-t border-gray-200 dark:border-darkBorder flex justify-between items-center">
                 <button onclick="lockApp()" class="text-[10px] text-red-500 hover:underline uppercase tracking-tighter">Lock Vault</button>
-                <span class="text-[9px] text-gray-400 uppercase tracking-widest">v1.1</span>
+                <span class="text-[9px] text-gray-400 uppercase tracking-widest">v1.2</span>
             </div>
         </div>
 
@@ -188,17 +238,21 @@
         let masterKey = null; 
         const APP_ID = 'vaultnote_v1';
 
-        // --- Dark Mode Logic ---
+        document.getElementById('year').textContent = new Date().getFullYear();
+
+        // --- UI Modal & Dark Mode Logic ---
         function toggleDarkMode() {
             const isDark = document.documentElement.classList.toggle('dark');
             localStorage.setItem('vaultnote_theme', isDark ? 'dark' : 'light');
         }
 
-        // Initialize theme from storage
         if (localStorage.getItem('vaultnote_theme') === 'dark' || 
             (!localStorage.getItem('vaultnote_theme') && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
             document.documentElement.classList.add('dark');
         }
+
+        function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
+        function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
 
         // --- Custom Encryption Logic ---
         async function deriveKey(password, salt) {
@@ -245,14 +299,18 @@
                 const key = await deriveKey(masterKey, dNote.salt);
                 let decryptedTitle = dNote.title;
                 
-                // Decrypt title if it has the ENC: prefix
+                // Decrypt title
                 if (dNote.title && dNote.title.startsWith("ENC:")) {
                     decryptedTitle = customXORDecrypt(dNote.title.substring(4), key);
                 }
                 
+                // Decrypt content into memory to allow full-text searching
+                const decryptedContent = customXORDecrypt(dNote.content, key);
+                
                 notes.push({
                     ...dNote,
-                    title: decryptedTitle
+                    title: decryptedTitle,
+                    decryptedContent: decryptedContent
                 });
             }
             
@@ -271,7 +329,9 @@
                 const key = await deriveKey(masterKey, note.salt);
                 diskNotes.push({
                     ...note,
-                    title: "ENC:" + customXOR(note.title, key)
+                    title: "ENC:" + customXOR(note.title, key),
+                    // Drop decryptedContent from storage for security
+                    decryptedContent: undefined 
                 });
             }
             localStorage.setItem(APP_ID, JSON.stringify(diskNotes));
@@ -293,6 +353,8 @@
             document.getElementById('note-editor').classList.add('hidden');
             document.getElementById('editor-placeholder').classList.remove('hidden');
             document.getElementById('delete-btn').classList.add('hidden');
+            // Clear decrypted memory cache
+            notes.forEach(n => n.decryptedContent = ""); 
         }
 
         async function createNote(title) {
@@ -302,6 +364,7 @@
                 id: Date.now().toString(),
                 title: title,
                 content: customXOR("", key),
+                decryptedContent: "",
                 salt: salt,
                 updated: Date.now()
             };
@@ -322,8 +385,8 @@
                 placeholder.classList.add('hidden');
                 editor.classList.remove('hidden');
                 document.getElementById('delete-btn').classList.remove('hidden');
-                const key = await deriveKey(masterKey, note.salt);
-                editor.value = customXORDecrypt(note.content, key);
+                
+                editor.value = note.decryptedContent;
                 updateWordCount(editor.value);
                 renderNotesList();
                 editor.focus();
@@ -335,8 +398,11 @@
             const noteIndex = notes.findIndex(n => n.id === currentNoteId);
             const content = document.getElementById('note-editor').value;
             const key = await deriveKey(masterKey, notes[noteIndex].salt);
+            
             notes[noteIndex].content = customXOR(content, key);
+            notes[noteIndex].decryptedContent = content; // Update memory cache
             notes[noteIndex].updated = Date.now();
+            
             updateWordCount(content);
             await saveToDisk();
         }
@@ -375,8 +441,14 @@
         function renderNotesList(filter = "") {
             const listContainer = document.getElementById('notes-list');
             listContainer.innerHTML = '';
+            
+            // Search filters by Title OR Content
             const filtered = notes
-                .filter(n => n.title.toLowerCase().includes(filter))
+                .filter(n => {
+                    const tMatch = n.title.toLowerCase().includes(filter);
+                    const cMatch = n.decryptedContent && n.decryptedContent.toLowerCase().includes(filter);
+                    return tMatch || cMatch;
+                })
                 .sort((a, b) => b.updated - a.updated);
 
             filtered.forEach(note => {
@@ -396,10 +468,41 @@
             document.getElementById('word-count').innerText = `${count} words`;
         }
 
+        // --- Keyboard Shortcuts & Links ---
         window.addEventListener('keydown', (e) => {
             if ((e.metaKey || e.ctrlKey) && e.key === 'l') {
                 e.preventDefault();
                 document.getElementById('search-input').focus();
+            }
+        });
+
+        const editor = document.getElementById('note-editor');
+        
+        // Change cursor to pointer if hovering text area with Ctrl pressed
+        editor.addEventListener('mousemove', function(e) {
+            if (e.ctrlKey || e.metaKey) {
+                this.style.cursor = 'pointer';
+            } else {
+                this.style.cursor = 'text';
+            }
+        });
+
+        // Clickable Links with Ctrl+Click
+        editor.addEventListener('click', function(e) {
+            if (e.ctrlKey || e.metaKey) {
+                const text = this.value;
+                const pos = this.selectionStart;
+                
+                let start = pos;
+                while(start > 0 && !/\s/.test(text[start - 1])) start--;
+                let end = pos;
+                while(end < text.length && !/\s/.test(text[end])) end++;
+                
+                const word = text.substring(start, end).trim();
+                
+                if (/^https?:\/\//i.test(word)) {
+                    window.open(word, '_blank');
+                }
             }
         });
 
