@@ -6,6 +6,7 @@
     <title>VaultNote - Secure Notes</title>
     <!-- Shield Favicon -->
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%232563eb'><path d='M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z'/></svg>">
+    <link id="pwa-manifest" rel="manifest">
     <script src="https://cdn.tailwindcss.com?plugins=typography"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/turndown/lib/turndown.browser.umd.js"></script>
@@ -272,6 +273,27 @@
         const APP_ID = 'vaultnote_v1';
         let currentView = 'raw';
         let allListsCollapsed = false;
+
+        // --- PWA Manifest Setup ---
+        function setupPWA() {
+            const manifestJSON = {
+                "name": "VaultNote - Secure Notes",
+                "short_name": "VaultNote",
+                "start_url": window.location.pathname,
+                "display": "standalone",
+                "background_color": "#1c1c1e",
+                "theme_color": "#2563eb",
+                "icons": [{
+                    "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%232563eb'><path d='M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z'/></svg>",
+                    "sizes": "192x192 512x512",
+                    "type": "image/svg+xml",
+                    "purpose": "any maskable"
+                }]
+            };
+            const manifestData = "data:application/manifest+json;charset=utf-8," + encodeURIComponent(JSON.stringify(manifestJSON));
+            document.getElementById('pwa-manifest').setAttribute('href', manifestData);
+        }
+        setupPWA();
 
         // Initialize Turndown and filter out our injected toggle buttons from Markdown generation
         const turndownService = new TurndownService({ headingStyle: 'atx', codeBlockStyle: 'fenced' });
@@ -720,10 +742,15 @@
                 const childList = li.querySelector(':scope > ul, :scope > ol');
                 const existingToggle = li.querySelector(':scope > .list-toggle-btn');
                 
+                if (childList) {
+                    li.style.position = 'relative';
+                    li.style.paddingRight = '32px'; // Prevent text from overlapping the toggle on the right
+                }
+
                 if (childList && !existingToggle) {
                     const btn = document.createElement('span');
-                    // Style it cleanly so it sits next to the text content
-                    btn.className = 'list-toggle-btn text-blue-500 hover:text-blue-700 dark:hover:text-blue-300 cursor-pointer select-none inline-block mr-2 font-mono text-[10px] transform transition-transform';
+                    // Style cleanly and absolute position to the right side
+                    btn.className = 'list-toggle-btn text-blue-500 hover:text-blue-700 dark:hover:text-blue-300 cursor-pointer select-none absolute right-0 top-1 flex items-center justify-center w-6 h-6 bg-gray-100 dark:bg-darkBorder rounded-md opacity-60 hover:opacity-100 font-mono text-[10px] transform transition-all';
                     btn.innerHTML = childList.classList.contains('hidden') ? '▶' : '▼';
                     btn.contentEditable = 'false';
                     btn.onclick = function(e) {
@@ -731,9 +758,10 @@
                         const isCollapsed = childList.classList.toggle('hidden');
                         btn.innerHTML = isCollapsed ? '▶' : '▼';
                     };
-                    li.insertBefore(btn, li.firstChild);
+                    li.appendChild(btn);
                 } else if (!childList && existingToggle) {
                     existingToggle.remove();
+                    li.style.paddingRight = '';
                 } else if (childList && existingToggle) {
                     // Update state if somehow out of sync
                     existingToggle.innerHTML = childList.classList.contains('hidden') ? '▶' : '▼';
