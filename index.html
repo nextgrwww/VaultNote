@@ -6,7 +6,9 @@
     <title>VaultNote - Secure Notes</title>
     <!-- Shield Favicon -->
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%232563eb'><path d='M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z'/></svg>">
-    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.tailwindcss.com?plugins=typography"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/turndown/lib/turndown.browser.umd.js"></script>
     <script>
         tailwind.config = {
             darkMode: 'class',
@@ -197,21 +199,42 @@
                 </div>
             </div>
             <div id="notes-list" class="notes-list"></div>
-            <div class="p-3 border-t border-gray-200 dark:border-darkBorder flex justify-between items-center">
+            <div class="p-3 border-t border-gray-200 dark:border-darkBorder flex justify-between items-center bg-gray-50 dark:bg-darkSidebar">
+                <div class="flex gap-2">
+                    <button onclick="exportVault()" class="text-[10px] text-blue-500 hover:underline uppercase tracking-tighter" title="Save Backup">Export</button>
+                    <button onclick="triggerImport()" class="text-[10px] text-blue-500 hover:underline uppercase tracking-tighter" title="Load Backup">Import</button>
+                    <input type="file" id="import-file" class="hidden" accept=".json" onchange="importVault(event)">
+                </div>
                 <button onclick="lockApp()" class="text-[10px] text-red-500 hover:underline uppercase tracking-tighter">Lock Vault</button>
-                <span class="text-[9px] text-gray-400 uppercase tracking-widest">v1.2</span>
             </div>
         </div>
 
         <!-- Editor -->
-        <div class="editor-area">
+        <div class="editor-area relative">
             <div id="editor-placeholder" class="flex-1 flex flex-col items-center justify-center text-gray-400 p-10 text-center">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 mb-4 opacity-20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                 </svg>
                 <p>Select a note or search to create one.</p>
             </div>
-            <textarea id="note-editor" class="note-content hidden" oninput="saveCurrentNote()" placeholder="Start typing..."></textarea>
+            
+            <div id="editor-container" class="flex-1 flex flex-col hidden h-full overflow-hidden">
+                <div class="border-b border-gray-200 dark:border-darkBorder p-2 flex gap-1 items-center bg-gray-50 dark:bg-darkSidebar text-gray-600 dark:text-gray-300">
+                    <button onclick="applyFormat('bold')" class="p-1.5 hover:bg-gray-200 dark:hover:bg-darkBorder rounded text-sm font-bold" title="Bold (Ctrl+B)">B</button>
+                    <button onclick="applyFormat('italic')" class="p-1.5 hover:bg-gray-200 dark:hover:bg-darkBorder rounded text-sm italic" title="Italic (Ctrl+I)">I</button>
+                    <button onclick="applyFormat('heading')" class="p-1.5 hover:bg-gray-200 dark:hover:bg-darkBorder rounded text-sm font-bold" title="Heading">H</button>
+                    <button onclick="applyFormat('list')" class="p-1.5 hover:bg-gray-200 dark:hover:bg-darkBorder rounded text-sm" title="Bullet List">• List</button>
+                    <button onclick="applyFormat('link')" class="p-1.5 hover:bg-gray-200 dark:hover:bg-darkBorder rounded text-sm" title="Link">🔗</button>
+                    
+                    <div class="ml-auto flex bg-gray-200 dark:bg-darkBg rounded p-0.5">
+                        <button id="tab-raw" onclick="switchView('raw')" class="px-3 py-1 text-xs font-medium rounded bg-white dark:bg-darkBorder shadow-sm transition-all">Markdown</button>
+                        <button id="tab-rendered" onclick="switchView('rendered')" class="px-3 py-1 text-xs font-medium rounded hover:text-gray-900 dark:hover:text-white transition-all">Preview</button>
+                    </div>
+                </div>
+                
+                <textarea id="note-editor" class="flex-1 border-none outline-none p-8 text-base bg-transparent resize-none font-mono dark:text-gray-200" oninput="saveCurrentNote()"></textarea>
+                <div id="note-rendered" contenteditable="true" class="flex-1 border-none outline-none p-8 bg-transparent overflow-y-auto hidden prose dark:prose-invert max-w-none focus:outline-none" oninput="saveCurrentNote()"></div>
+            </div>
             
             <div class="status-bar">
                 <div id="word-count">0 words</div>
@@ -237,6 +260,8 @@
         let currentNoteId = null;
         let masterKey = null; 
         const APP_ID = 'vaultnote_v1';
+        let currentView = 'raw';
+        const turndownService = new TurndownService({ headingStyle: 'atx', codeBlockStyle: 'fenced' });
 
         document.getElementById('year').textContent = new Date().getFullYear();
 
@@ -350,7 +375,7 @@
             currentNoteId = null;
             document.getElementById('password-modal').classList.remove('hidden');
             document.getElementById('master-password').value = '';
-            document.getElementById('note-editor').classList.add('hidden');
+            document.getElementById('editor-container').classList.add('hidden');
             document.getElementById('editor-placeholder').classList.remove('hidden');
             document.getElementById('delete-btn').classList.add('hidden');
             // Clear decrypted memory cache
@@ -378,25 +403,39 @@
         async function selectNote(id) {
             currentNoteId = id;
             const note = notes.find(n => n.id === id);
-            const editor = document.getElementById('note-editor');
+            const container = document.getElementById('editor-container');
             const placeholder = document.getElementById('editor-placeholder');
             
             if (note) {
                 placeholder.classList.add('hidden');
-                editor.classList.remove('hidden');
+                container.classList.remove('hidden');
                 document.getElementById('delete-btn').classList.remove('hidden');
                 
-                editor.value = note.decryptedContent;
-                updateWordCount(editor.value);
-                renderNotesList();
-                editor.focus();
+                document.getElementById('note-editor').value = note.decryptedContent;
+                document.getElementById('note-rendered').innerHTML = marked.parse(note.decryptedContent || "");
+                
+                updateWordCount(note.decryptedContent);
+                renderNotesList(document.getElementById('search-input').value.toLowerCase());
+                
+                if (currentView === 'raw') {
+                    document.getElementById('note-editor').focus();
+                } else {
+                    document.getElementById('note-rendered').focus();
+                }
             }
         }
 
         async function saveCurrentNote() {
             if (!currentNoteId) return;
             const noteIndex = notes.findIndex(n => n.id === currentNoteId);
-            const content = document.getElementById('note-editor').value;
+            
+            let content;
+            if (currentView === 'raw') {
+                content = document.getElementById('note-editor').value;
+            } else {
+                content = turndownService.turndown(document.getElementById('note-rendered').innerHTML);
+            }
+
             const key = await deriveKey(masterKey, notes[noteIndex].salt);
             
             notes[noteIndex].content = customXOR(content, key);
@@ -405,6 +444,9 @@
             
             updateWordCount(content);
             await saveToDisk();
+            
+            // Re-render notes list to update the Last Edited timestamp
+            renderNotesList(document.getElementById('search-input').value.toLowerCase());
         }
 
         async function deleteCurrentNote() {
@@ -414,10 +456,11 @@
                 currentNoteId = null;
                 await saveToDisk();
                 
-                document.getElementById('note-editor').classList.add('hidden');
+                document.getElementById('editor-container').classList.add('hidden');
                 document.getElementById('editor-placeholder').classList.remove('hidden');
                 document.getElementById('delete-btn').classList.add('hidden');
                 document.getElementById('note-editor').value = '';
+                document.getElementById('note-rendered').innerHTML = '';
                 updateWordCount("");
                 renderNotesList();
             }
@@ -454,9 +497,12 @@
             filtered.forEach(note => {
                 const item = document.createElement('div');
                 item.className = `note-item ${note.id === currentNoteId ? 'active' : ''}`;
+                
+                const dateStr = new Date(note.updated).toLocaleString([], { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
+                
                 item.innerHTML = `
                     <div class="font-semibold truncate text-xs uppercase tracking-wide">${note.title}</div>
-                    <div class="text-[9px] opacity-60 mt-1">${new Date(note.updated).toLocaleDateString()}</div>
+                    <div class="text-[9px] opacity-60 mt-1">Last edited: ${dateStr}</div>
                 `;
                 item.onclick = () => selectNote(note.id);
                 listContainer.appendChild(item);
@@ -474,18 +520,30 @@
                 e.preventDefault();
                 document.getElementById('search-input').focus();
             }
+            if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'b') {
+                e.preventDefault();
+                applyFormat('bold');
+            }
+            if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'i') {
+                e.preventDefault();
+                applyFormat('italic');
+            }
         });
 
         const editor = document.getElementById('note-editor');
+        const renderedEditor = document.getElementById('note-rendered');
         
         // Change cursor to pointer if hovering text area with Ctrl pressed
-        editor.addEventListener('mousemove', function(e) {
+        editor.addEventListener('mousemove', handleCtrlHover);
+        renderedEditor.addEventListener('mousemove', handleCtrlHover);
+
+        function handleCtrlHover(e) {
             if (e.ctrlKey || e.metaKey) {
                 this.style.cursor = 'pointer';
             } else {
                 this.style.cursor = 'text';
             }
-        });
+        }
 
         // Clickable Links with Ctrl+Click
         editor.addEventListener('click', function(e) {
@@ -505,6 +563,101 @@
                 }
             }
         });
+
+        // --- View & Formatting Operations ---
+        function applyFormat(type) {
+            if (currentView === 'rendered') {
+                if (type === 'bold') document.execCommand('bold');
+                if (type === 'italic') document.execCommand('italic');
+                if (type === 'heading') document.execCommand('formatBlock', false, 'H2');
+                if (type === 'list') document.execCommand('insertUnorderedList');
+                if (type === 'link') {
+                    const url = prompt("Enter link URL:");
+                    if (url) document.execCommand('createLink', false, url);
+                }
+            } else {
+                const ta = document.getElementById('note-editor');
+                const start = ta.selectionStart;
+                const end = ta.selectionEnd;
+                const sel = ta.value.substring(start, end);
+                let replacement = sel;
+                
+                if (type === 'bold') replacement = `**${sel || 'bold text'}**`;
+                if (type === 'italic') replacement = `*${sel || 'italic text'}*`;
+                if (type === 'heading') replacement = `\n## ${sel || 'Heading'}\n`;
+                if (type === 'list') replacement = `\n- ${sel || 'List item'}\n`;
+                if (type === 'link') {
+                    const url = prompt("Enter link URL:", "https://");
+                    if (url) replacement = `[${sel || 'link'}](${url})`;
+                }
+                
+                ta.value = ta.value.substring(0, start) + replacement + ta.value.substring(end);
+                ta.focus();
+                ta.selectionStart = start + replacement.length;
+                ta.selectionEnd = start + replacement.length;
+                saveCurrentNote();
+            }
+        }
+
+        function switchView(view) {
+            currentView = view;
+            const ta = document.getElementById('note-editor');
+            const render = document.getElementById('note-rendered');
+            const tabRaw = document.getElementById('tab-raw');
+            const tabRendered = document.getElementById('tab-rendered');
+            
+            if (view === 'rendered') {
+                render.innerHTML = marked.parse(ta.value || "");
+                ta.classList.add('hidden');
+                render.classList.remove('hidden');
+                
+                tabRaw.classList.remove('bg-white', 'dark:bg-darkBorder', 'shadow-sm');
+                tabRaw.classList.add('hover:text-gray-900', 'dark:hover:text-white');
+                tabRendered.classList.add('bg-white', 'dark:bg-darkBorder', 'shadow-sm');
+                tabRendered.classList.remove('hover:text-gray-900', 'dark:hover:text-white');
+            } else {
+                ta.value = turndownService.turndown(render.innerHTML);
+                render.classList.add('hidden');
+                ta.classList.remove('hidden');
+                
+                tabRendered.classList.remove('bg-white', 'dark:bg-darkBorder', 'shadow-sm');
+                tabRendered.classList.add('hover:text-gray-900', 'dark:hover:text-white');
+                tabRaw.classList.add('bg-white', 'dark:bg-darkBorder', 'shadow-sm');
+                tabRaw.classList.remove('hover:text-gray-900', 'dark:hover:text-white');
+            }
+            saveCurrentNote();
+        }
+
+        // --- Export & Import ---
+        function exportVault() {
+            if (!masterKey) return alert("Please unlock the vault first.");
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(localStorage.getItem(APP_ID) || "[]");
+            const dlAnchorElem = document.createElement('a');
+            dlAnchorElem.setAttribute("href", dataStr);
+            dlAnchorElem.setAttribute("download", "vaultnote_backup.json");
+            dlAnchorElem.click();
+        }
+
+        function triggerImport() { document.getElementById('import-file').click(); }
+
+        function importVault(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    if (Array.isArray(data)) {
+                        localStorage.setItem(APP_ID, JSON.stringify(data));
+                        alert("Vault imported successfully! Please log in.");
+                        location.reload();
+                    } else throw new Error("Invalid format");
+                } catch (err) {
+                    alert("Error importing vault: Invalid JSON file.");
+                }
+            };
+            reader.readAsText(file);
+        }
 
         // Focus password field on load
         window.onload = () => document.getElementById('master-password').focus();
