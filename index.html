@@ -222,29 +222,41 @@
             </div>
             
             <div id="editor-container" class="flex-1 flex flex-col hidden h-full overflow-hidden">
-                <div class="border-b border-gray-200 dark:border-darkBorder p-2 flex gap-1 items-center bg-gray-50 dark:bg-darkSidebar text-gray-600 dark:text-gray-300">
-                    <button onclick="applyFormat('bold')" class="p-1.5 hover:bg-gray-200 dark:hover:bg-darkBorder rounded text-sm font-bold" title="Bold (Ctrl+B)">B</button>
-                    <button onclick="applyFormat('italic')" class="p-1.5 hover:bg-gray-200 dark:hover:bg-darkBorder rounded text-sm italic" title="Italic (Ctrl+I)">I</button>
-                    <button onclick="applyFormat('heading')" class="p-1.5 hover:bg-gray-200 dark:hover:bg-darkBorder rounded text-sm font-bold" title="Heading">H</button>
-                    <button onclick="applyFormat('list')" class="p-1.5 hover:bg-gray-200 dark:hover:bg-darkBorder rounded text-sm" title="Bullet List">• List</button>
+                <div class="border-b border-gray-200 dark:border-darkBorder p-2 flex gap-2 items-center bg-gray-50 dark:bg-darkSidebar text-gray-600 dark:text-gray-300 overflow-x-auto">
                     
-                    <!-- Indent / Outdent Controls -->
-                    <div class="h-4 w-px bg-gray-300 dark:bg-darkBorder mx-1"></div>
-                    <button onclick="applyFormat('outdent')" class="p-1.5 hover:bg-gray-200 dark:hover:bg-darkBorder rounded text-sm" title="Decrease Indent (Shift+Tab)">⇤</button>
-                    <button onclick="applyFormat('indent')" class="p-1.5 hover:bg-gray-200 dark:hover:bg-darkBorder rounded text-sm" title="Increase Indent (Tab)">⇥</button>
-                    
-                    <button onclick="applyFormat('link')" class="p-1.5 hover:bg-gray-200 dark:hover:bg-darkBorder rounded text-sm" title="Link">🔗</button>
-                    
-                    <button id="collapse-all-btn" onclick="toggleAllLists()" class="hidden ml-1 p-1 px-2 hover:bg-gray-200 dark:hover:bg-darkBorder rounded text-xs font-semibold text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-900" title="Collapse/Expand All Lists">↕ All</button>
+                    <!-- Formatting Group -->
+                    <div class="flex bg-gray-200 dark:bg-darkBg rounded p-0.5">
+                        <button onclick="applyFormat('bold')" class="px-3 py-1 text-xs font-bold rounded hover:bg-white dark:hover:bg-darkBorder hover:shadow-sm transition-all text-gray-700 dark:text-gray-300" title="Bold (Ctrl+B)">B</button>
+                        <button onclick="applyFormat('italic')" class="px-3 py-1 text-xs italic rounded hover:bg-white dark:hover:bg-darkBorder hover:shadow-sm transition-all text-gray-700 dark:text-gray-300" title="Italic (Ctrl+I)">I</button>
+                        <button onclick="applyFormat('heading')" class="px-3 py-1 text-xs font-bold rounded hover:bg-white dark:hover:bg-darkBorder hover:shadow-sm transition-all text-gray-700 dark:text-gray-300" title="Heading">H</button>
+                    </div>
 
+                    <!-- Insert Group -->
+                    <div class="flex bg-gray-200 dark:bg-darkBg rounded p-0.5">
+                        <button onclick="applyFormat('list')" class="px-3 py-1 text-xs font-medium rounded hover:bg-white dark:hover:bg-darkBorder hover:shadow-sm transition-all text-gray-700 dark:text-gray-300" title="Bullet List">• List</button>
+                        <button onclick="applyFormat('link')" class="px-3 py-1 text-xs font-medium rounded hover:bg-white dark:hover:bg-darkBorder hover:shadow-sm transition-all text-gray-700 dark:text-gray-300" title="Link">🔗</button>
+                    </div>
+
+                    <!-- Indent Group -->
+                    <div class="flex bg-gray-200 dark:bg-darkBg rounded p-0.5">
+                        <button onclick="applyFormat('outdent')" class="px-3 py-1 text-xs font-medium rounded hover:bg-white dark:hover:bg-darkBorder hover:shadow-sm transition-all text-gray-700 dark:text-gray-300" title="Decrease Indent (Shift+Tab)">⇤</button>
+                        <button onclick="applyFormat('indent')" class="px-3 py-1 text-xs font-medium rounded hover:bg-white dark:hover:bg-darkBorder hover:shadow-sm transition-all text-gray-700 dark:text-gray-300" title="Increase Indent (Tab)">⇥</button>
+                    </div>
+                    
+                    <!-- Folding Group -->
+                    <div id="collapse-group" class="flex bg-gray-200 dark:bg-darkBg rounded p-0.5">
+                        <button onclick="toggleAllLists()" class="px-3 py-1 text-xs font-semibold rounded hover:bg-white dark:hover:bg-darkBorder hover:shadow-sm transition-all text-blue-600 dark:text-blue-400" title="Collapse/Expand All Lists">↕ All</button>
+                    </div>
+
+                    <!-- View Toggle Group -->
                     <div class="ml-auto flex bg-gray-200 dark:bg-darkBg rounded p-0.5">
-                        <button id="tab-raw" onclick="switchView('raw')" class="px-3 py-1 text-xs font-medium rounded bg-white dark:bg-darkBorder shadow-sm transition-all">Markdown</button>
-                        <button id="tab-rendered" onclick="switchView('rendered')" class="px-3 py-1 text-xs font-medium rounded hover:text-gray-900 dark:hover:text-white transition-all">Preview</button>
+                        <button id="tab-raw" onclick="switchView('raw')" class="px-3 py-1 text-xs font-medium rounded hover:text-gray-900 dark:hover:text-white transition-all">Markdown</button>
+                        <button id="tab-rendered" onclick="switchView('rendered')" class="px-3 py-1 text-xs font-medium rounded bg-white dark:bg-darkBorder shadow-sm transition-all">Preview</button>
                     </div>
                 </div>
                 
-                <textarea id="note-editor" class="flex-1 border-none outline-none p-8 text-base bg-transparent resize-none font-mono dark:text-gray-200" oninput="saveCurrentNote()"></textarea>
-                <div id="note-rendered" contenteditable="true" class="flex-1 border-none outline-none p-8 bg-transparent overflow-y-auto hidden prose dark:prose-invert max-w-none focus:outline-none" oninput="saveCurrentNote()"></div>
+                <textarea id="note-editor" class="flex-1 border-none outline-none p-8 text-base bg-transparent resize-none font-mono dark:text-gray-200 hidden" oninput="saveCurrentNote()"></textarea>
+                <div id="note-rendered" contenteditable="true" class="flex-1 border-none outline-none p-8 bg-transparent overflow-y-auto prose dark:prose-invert max-w-none focus:outline-none" oninput="saveCurrentNote()"></div>
             </div>
             
             <div class="status-bar">
@@ -271,7 +283,7 @@
         let currentNoteId = null;
         let masterKey = null; 
         const APP_ID = 'vaultnote_v1';
-        let currentView = 'raw';
+        let currentView = 'rendered'; // Default to Preview View
         let allListsCollapsed = false;
 
         // --- PWA Manifest Setup ---
@@ -705,13 +717,13 @@
             const render = document.getElementById('note-rendered');
             const tabRaw = document.getElementById('tab-raw');
             const tabRendered = document.getElementById('tab-rendered');
-            const collapseAllBtn = document.getElementById('collapse-all-btn');
+            const collapseGroup = document.getElementById('collapse-group');
             
             if (view === 'rendered') {
                 render.innerHTML = marked.parse(ta.value || "");
                 ta.classList.add('hidden');
                 render.classList.remove('hidden');
-                collapseAllBtn.classList.remove('hidden');
+                collapseGroup.classList.remove('hidden');
                 
                 tabRaw.classList.remove('bg-white', 'dark:bg-darkBorder', 'shadow-sm');
                 tabRaw.classList.add('hover:text-gray-900', 'dark:hover:text-white');
@@ -722,7 +734,7 @@
                 ta.value = turndownService.turndown(render.innerHTML);
                 render.classList.add('hidden');
                 ta.classList.remove('hidden');
-                collapseAllBtn.classList.add('hidden');
+                collapseGroup.classList.add('hidden');
                 
                 tabRendered.classList.remove('bg-white', 'dark:bg-darkBorder', 'shadow-sm');
                 tabRendered.classList.add('hover:text-gray-900', 'dark:hover:text-white');
