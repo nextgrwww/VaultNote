@@ -739,21 +739,35 @@
             const listItems = container.querySelectorAll('li');
             
             listItems.forEach(li => {
-                const childList = li.querySelector(':scope > ul, :scope > ol');
+                let childList = li.querySelector(':scope > ul, :scope > ol');
+                
+                // Fix for execCommand('indent') browser quirk:
+                // Browsers often create nested lists as siblings of <li> rather than children.
+                if (!childList && li.nextElementSibling && ['UL', 'OL', 'BLOCKQUOTE'].includes(li.nextElementSibling.tagName)) {
+                    childList = li.nextElementSibling;
+                }
+
                 const existingToggle = li.querySelector(':scope > .list-toggle-btn');
                 
                 if (childList) {
                     li.style.position = 'relative';
-                    li.style.paddingRight = '32px'; // Prevent text from overlapping the toggle on the right
+                    li.style.listStyleType = 'none'; // Hide native bullet so chevron can replace it on the left
                 }
 
                 if (childList && !existingToggle) {
                     const btn = document.createElement('span');
-                    // Style cleanly and absolute position to the right side
-                    btn.className = 'list-toggle-btn text-blue-500 hover:text-blue-700 dark:hover:text-blue-300 cursor-pointer select-none absolute right-0 top-1 flex items-center justify-center w-6 h-6 bg-gray-100 dark:bg-darkBorder rounded-md opacity-60 hover:opacity-100 font-mono text-[10px] transform transition-all';
+                    // Style cleanly and absolute position to the left side
+                    btn.className = 'list-toggle-btn text-blue-500 hover:text-blue-700 dark:hover:text-blue-300 cursor-pointer select-none absolute -left-6 top-1 flex items-center justify-center w-5 h-5 bg-gray-100 dark:bg-darkBorder rounded-md opacity-60 hover:opacity-100 font-mono text-[10px] transform transition-all';
                     btn.innerHTML = childList.classList.contains('hidden') ? '▶' : '▼';
                     btn.contentEditable = 'false';
+                    
+                    // Prevent mousedown from stealing focus from the contenteditable editor
+                    btn.onmousedown = function(e) {
+                        e.preventDefault();
+                    };
+                    
                     btn.onclick = function(e) {
+                        e.preventDefault();
                         e.stopPropagation();
                         const isCollapsed = childList.classList.toggle('hidden');
                         btn.innerHTML = isCollapsed ? '▶' : '▼';
@@ -761,7 +775,7 @@
                     li.appendChild(btn);
                 } else if (!childList && existingToggle) {
                     existingToggle.remove();
-                    li.style.paddingRight = '';
+                    li.style.listStyleType = '';
                 } else if (childList && existingToggle) {
                     // Update state if somehow out of sync
                     existingToggle.innerHTML = childList.classList.contains('hidden') ? '▶' : '▼';
@@ -773,13 +787,21 @@
             if (currentView !== 'rendered') return;
             allListsCollapsed = !allListsCollapsed;
             const container = document.getElementById('note-rendered');
-            const childLists = container.querySelectorAll('li > ul, li > ol');
             
-            childLists.forEach(list => {
-                if (allListsCollapsed) {
-                    list.classList.add('hidden');
-                } else {
-                    list.classList.remove('hidden');
+            // Expand logic to check for nested items or immediate browser-generated siblings
+            const listItems = container.querySelectorAll('li');
+            listItems.forEach(li => {
+                let childList = li.querySelector(':scope > ul, :scope > ol');
+                if (!childList && li.nextElementSibling && ['UL', 'OL', 'BLOCKQUOTE'].includes(li.nextElementSibling.tagName)) {
+                    childList = li.nextElementSibling;
+                }
+                
+                if (childList) {
+                    if (allListsCollapsed) {
+                        childList.classList.add('hidden');
+                    } else {
+                        childList.classList.remove('hidden');
+                    }
                 }
             });
             refreshListToggles();
